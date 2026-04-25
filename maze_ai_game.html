@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAZE.AI — A★ Pathfinding Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root
+  {
+    --bg:#0a0c10;--surface:#111520;--panel:#161b28;
+    --border:#1e2840;--accent:#00e5ff;--accent2:#7c3aed;
+    --green:#00ff88;--red:#ff4757;--gold:#ffd700;
+    --text:#e0e6f0;--muted:#6b7a99;
+  }
+
+  body
+  {
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Exo 2',sans-serif;
+      min-height:100vh;
+      display:flex;
+      justify-content:center
+  }
+
+  #app
+  {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px;
+    gap:14px;
+    width:100%;
+    max-width:750px
+  }
+
+  h1
+  {
+    font-family:'Share Tech Mono',monospace;
+    font-size:26px;color:var(--accent);
+    letter-spacing:4px;
+    text-shadow:0 0 24px rgba(0,229,255,0.4);
+    margin-top:8px
+  }
+
+  .subtitle
+  {
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:3px;
+    font-family:'Share Tech Mono',monospace
+  }
+  
+  .main-layout
+  {
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+    width:100%
+  }
+  
+  #canvas-wrap
+  {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px
+  }
+  
+  canvas
+  {
+    display:block;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#050810;
+    max-width:100%
+  }
+  
+  .panel
+  {
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+    width:190px;
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+    flex-shrink:0
+  }
+  
+  .panel-title
+  {
+    font-family:'Share Tech Mono',monospace;
+    font-size:11px;
+    color:var(--accent);
+    letter-spacing:2px;
+    border-bottom:1px solid var(--border);
+    padding-bottom:6px
+  }
+  
+  .stat-row
+  {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:12px
+  }
+  
+  .stat-label
+  {
+    color:var(--muted)
+  }
+  
+  .stat-val
+  {
+    font-family:'Share Tech Mono',monospace;
+    color:var(--text);
+    font-size:13px
+  }
+  
+  select,input[type=range]
+  {
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:4px;
+    font-family:'Exo 2',sans-serif;
+    font-size:12px
+  }
+  
+  select
+  {
+    padding:5px 6px
+  }
+  
+  input[type=range]
+  {
+    accent-color:var(--accent);
+    cursor:pointer
+  }
+  
+  .range-row
+  {
+    display:flex;
+    flex-direction:column;
+    gap:5px
+  }
+  
+  .range-label
+  {
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    color:var(--muted)
+  }
+  
+  button
+  {
+    width:100%;
+    padding:9px;
+    border:none;
+    border-radius:7px;
+    cursor:pointer;
+    font-family:'Exo 2',sans-serif;font-size:12px;
+    font-weight:600;
+    letter-spacing:1px;
+    transition:all .15s
+  }
+  
+  .btn-primary
+  {
+    background:var(--accent2);
+    color:#fff
+  }
+  
+  .btn-primary:hover
+  {
+    background:#6d28d9
+  }
+  
+  .btn-secondary
+  {
+    background:transparent;
+    border:1px solid var(--accent);
+    color:var(--accent)
+  }
+  
+  .btn-secondary:hover
+  {
+    background:rgba(0,229,255,0.08)
+  }
+  
+  .btn-solve
+  {
+    background:linear-gradient(135deg,#00c9a7,#00e5ff);
+    color:#000;
+    font-weight:700
+  }
+  
+  .btn-solve:hover
+  {
+    opacity:.88
+  }
+  
+  .btn-solve:disabled
+  {
+    opacity:.35;
+    cursor:not-allowed
+  }
+  
+  .legend
+  {
+    display:flex;
+    flex-direction:column;
+    gap:6px
+  }
+  
+  .legend-item
+  {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:11px;
+    color:var(--muted)
+  }
+  
+  .legend-dot
+  {
+    width:11px;
+    height:11px;
+    border-radius:3px;
+    flex-shrink:0
+  }
+  
+  .log-box
+  {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:7px;
+    font-family:'Share Tech Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    min-height:60px;
+    max-height:90px;
+    overflow-y:auto;
+    line-height:1.7
+  }
+  
+  .msg
+  {
+    color:var(--green)
+  }
+  
+  .msg.info
+  {
+    color:var(--accent)
+  }
+  
+  .msg.warn
+  {
+    color:var(--gold)
+  }
+  
+  .d-controls
+  {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px
+  }
+  
+  .d-row
+  {
+    display:flex;
+    gap:4px
+  }
+  
+  .ctrl-btn
+  {
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:7px;
+    padding:9px 18px;
+    cursor:pointer;
+    font-size:15px;
+    font-family:'Exo 2',sans-serif;
+    transition:all .1s;
+    user-select:none
+  }
+  
+  .ctrl-btn:hover,.ctrl-btn:active
+  {
+    border-color:var(--accent);
+    color:var(--accent);
+    background:rgba(0,229,255,0.06)
+  }
+  
+  .win-banner
+  {
+    display:none;
+    background:linear-gradient(135deg,#00c9a7,#ffd700);
+    color:#000;border-radius:10px;
+    padding:12px 28px;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:1px;
+    text-align:center;
+    width:100%
+  }
+  
+  .win-banner.show
+  {
+    display:block
+  }
+ 
+  .hint
+  {
+    font-size:11px;
+    color:var(--muted);
+    text-align:center;
+    font-family:'Share Tech Mono',monospace
+  }
+
+  @media(max-width:540px){
+    .main-layout{flex-direction:column;align-items:center}
+    .panel{width:100%;max-width:480px}
+    h1{font-size:20px}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <h1>// MAZE.AI //</h1>
+  <div class="subtitle">A★ PATHFINDING ENGINE</div>
+  <div id="win-banner" class="win-banner">🏆 MAZE SOLVED! YOU REACHED THE EXIT!</div>
+  <div class="main-layout">
+    <div id="canvas-wrap">
+      <canvas id="maze"></canvas>
+      <div class="d-controls">
+        <div class="d-row"><button class="ctrl-btn" id="btn-up">▲</button></div>
+        <div class="d-row">
+          <button class="ctrl-btn" id="btn-left">◄</button>
+          <button class="ctrl-btn" id="btn-down">▼</button>
+          <button class="ctrl-btn" id="btn-right">►</button>
+        </div>
+      </div>
+      <div class="hint">Arrow keys / WASD also work</div>
+    </div>
+    
+    <div class="panel">
+      <div class="panel-title">CONFIGURATION</div>
+      <div class="range-row">
+        <div class="range-label"><span>Grid Size</span><span id="size-val">15×15</span></div>
+        <input type="range" id="size-range" min="9" max="25" step="2" value="15">
+      </div>
+      <div class="range-row">
+        <div class="range-label"><span>AI Speed</span><span id="speed-val">50ms</span></div>
+        <input type="range" id="speed-range" min="10" max="300" value="50">
+      </div>
+      <button class="btn-primary" id="btn-gen">⊞ NEW MAZE</button>
+      <button class="btn-solve" id="btn-ai">▶ SOLVE WITH AI</button>
+      <button class="btn-secondary" id="btn-reset">↺ RESET PLAYER</button>
+
+      <div class="panel-title">STATS</div>
+      <div class="stat-row"><span class="stat-label">Your Moves</span><span class="stat-val" id="stat-moves">0</span></div>
+      <div class="stat-row"><span class="stat-label">Nodes Explored</span><span class="stat-val" id="stat-explored">—</span></div>
+      <div class="stat-row"><span class="stat-label">Optimal Path</span><span class="stat-val" id="stat-path">—</span></div>
+      <div class="stat-row"><span class="stat-label">Status</span><span class="stat-val" id="stat-status">READY</span></div>
+
+      <div class="panel-title">LEGEND</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00e5ff;box-shadow:0 0 6px #00e5ff88"></div>You (player)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div>Exit goal</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(124,58,237,0.55)"></div>AI explored</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffd700"></div>Optimal path</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1a2033;border:1px solid #1e2840"></div>Wall</div>
+      </div>
+
+      <div class="panel-title">LOG</div>
+      <div class="log-box" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('maze');
+const ctx = canvas.getContext('2d');
+let COLS = 15, ROWS = 15;
+let grid, player, goal, aiRunning = false, moveCount = 0;
+let aiPath = [], aiExplored = new Set(), animInterval = null;
+
+function log(msg, type='') {
+  const lb = document.getElementById('log');
+  const d = document.createElement('div');
+  d.className = 'msg ' + type;
+  d.textContent = '> ' + msg;
+  lb.appendChild(d);
+  lb.scrollTop = lb.scrollHeight;
+  if (lb.children.length > 30) lb.removeChild(lb.children[0]);
+}
+
+function setStat(id, val) { document.getElementById(id).textContent = val; }
+
+// ── Maze Generation: Recursive Backtracker ──────────────────────
+function generateMaze(cols, rows) {
+  const cells = Array.from({length: rows}, (_, r) =>
+    Array.from({length: cols}, (_, c) => ({r, c, visited: false, walls: {N:true,S:true,E:true,W:true}}))
+  );
+  const stack = [];
+  const start = cells[0][0];
+  start.visited = true;
+  stack.push(start);
+  const dirs = [
+    {d:'N', dr:-1, dc:0, op:'S'},
+    {d:'S', dr:1,  dc:0, op:'N'},
+    {d:'E', dr:0,  dc:1, op:'W'},
+    {d:'W', dr:0,  dc:-1,op:'E'}
+  ];
+  while (stack.length) {
+    const cur = stack[stack.length - 1];
+    const nbrs = dirs.map(({d,dr,dc,op}) => {
+      const nr = cur.r+dr, nc = cur.c+dc;
+      if (nr>=0&&nr<rows&&nc>=0&&nc<cols&&!cells[nr][nc].visited)
+        return {cell: cells[nr][nc], d, op};
+      return null;
+    }).filter(Boolean);
+    if (nbrs.length) {
+      const {cell, d, op} = nbrs[Math.floor(Math.random() * nbrs.length)];
+      cur.walls[d] = false;
+      cell.walls[op] = false;
+      cell.visited = true;
+      stack.push(cell);
+    } else stack.pop();
+  }
+  return cells;
+}
+
+// ── A★ Search ───────────────────────────────────────────────────
+function heuristic(a, b) { return Math.abs(a.r - b.r) + Math.abs(a.c - b.c); }
+
+function astar(grid, start, goal, cols, rows) {
+  const key = (r, c) => r * cols + c;
+  const open = new Map();
+  const closed = new Set();
+  const gScore = new Map();
+  const fScore = new Map();
+  const parent = new Map();
+  const startK = key(start.r, start.c);
+  gScore.set(startK, 0);
+  fScore.set(startK, heuristic(start, goal));
+  open.set(startK, start);
+  const explored = [];
+
+  while (open.size > 0) {
+    let curK = null, bestF = Infinity;
+    for (const [k] of open) {
+      const f = fScore.get(k) ?? Infinity;
+      if (f < bestF) { bestF = f; curK = k; }
+    }
+    const cur = open.get(curK);
+    if (cur.r === goal.r && cur.c === goal.c) {
+      const path = [];
+      let k = curK;
+      while (parent.has(k)) { path.unshift(k); k = parent.get(k); }
+      path.unshift(startK);
+      return { path: path.map(k => grid[Math.floor(k/cols)][k%cols]), explored };
+    }
+    open.delete(curK);
+    closed.add(curK);
+    explored.push(cur);
+
+    const dirs = [{d:'N',dr:-1,dc:0},{d:'S',dr:1,dc:0},{d:'E',dr:0,dc:1},{d:'W',dr:0,dc:-1}];
+    for (const {d, dr, dc} of dirs) {
+      if (cur.walls[d]) continue;
+      const nr = cur.r+dr, nc = cur.c+dc;
+      if (nr<0||nr>=rows||nc<0||nc>=cols) continue;
+      const nk = key(nr, nc);
+      if (closed.has(nk)) continue;
+      const g = (gScore.get(curK) ?? 0) + 1;
+      if (!open.has(nk)) open.set(nk, grid[nr][nc]);
+      else if (g >= (gScore.get(nk) ?? Infinity)) continue;
+      parent.set(nk, curK);
+      gScore.set(nk, g);
+      fScore.set(nk, g + heuristic(grid[nr][nc], goal));
+    }
+  }
+  return null;
+}
+
+// ── Rendering ───────────────────────────────────────────────────
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const maxW = Math.min(wrap.clientWidth, 500);
+  const cs = Math.floor(maxW / COLS);
+  canvas.width = cs * COLS;
+  canvas.height = cs * ROWS;
+}
+
+function draw() {
+  const W = canvas.width, H = canvas.height;
+  const cs = Math.floor(W / COLS);
+  ctx.fillStyle = '#050810';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = c * cs, y = r * cs;
+      const k = r * COLS + c;
+      // Floor
+      ctx.fillStyle = aiExplored.has(k) ? 'rgba(124,58,237,0.2)' : '#0b0f1a';
+      ctx.fillRect(x, y, cs, cs);
+      // Walls
+      ctx.strokeStyle = '#1e2840';
+      ctx.lineWidth = Math.max(1, cs * 0.06);
+      const cell = grid[r][c];
+      if (cell.walls.N) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+cs, y); ctx.stroke(); }
+      if (cell.walls.S) { ctx.beginPath(); ctx.moveTo(x, y+cs); ctx.lineTo(x+cs, y+cs); ctx.stroke(); }
+      if (cell.walls.W) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y+cs); ctx.stroke(); }
+      if (cell.walls.E) { ctx.beginPath(); ctx.moveTo(x+cs, y); ctx.lineTo(x+cs, y+cs); ctx.stroke(); }
+    }
+  }
+
+  // AI path (gold line)
+  if (aiPath.length > 1) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,215,0,0.75)';
+    ctx.lineWidth = cs * 0.22;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    aiPath.forEach((cell, i) => {
+      const px = cell.c * cs + cs/2, py = cell.r * cs + cs/2;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Exit / goal
+  const gx = goal.c * cs, gy = goal.r * cs;
+  const pad = cs * 0.15;
+  ctx.fillStyle = '#00ff88';
+  ctx.fillRect(gx+pad, gy+pad, cs-pad*2, cs-pad*2);
+  ctx.fillStyle = '#003322';
+  ctx.font = `bold ${Math.floor(cs * 0.55)}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('⊕', gx + cs/2, gy + cs/2);
+
+  // Player
+  const px = player.c * cs + cs/2, py = player.r * cs + cs/2;
+  ctx.save();
+  ctx.shadowColor = '#00e5ff';
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = '#00e5ff';
+  ctx.beginPath();
+  ctx.arc(px, py, cs * 0.33, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#00242e';
+  ctx.font = `${Math.floor(cs * 0.38)}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('◈', px, py + 1);
+}
+
+// ── Game Logic ──────────────────────────────────────────────────
+function initGame() {
+  cancelSolve();
+  COLS = parseInt(document.getElementById('size-range').value);
+  ROWS = COLS;
+  resizeCanvas();
+  grid = generateMaze(COLS, ROWS);
+  player = grid[0][0];
+  goal = grid[ROWS-1][COLS-1];
+  aiPath = []; aiExplored = new Set(); moveCount = 0;
+  setStat('stat-moves', '0');
+  setStat('stat-explored', '—');
+  setStat('stat-path', '—');
+  setStat('stat-status', 'READY');
+  document.getElementById('win-banner').classList.remove('show');
+  log(`New ${COLS}×${ROWS} maze generated`, 'info');
+  draw();
+}
+
+function movePlayer(dr, dc) {
+  if (aiRunning) return;
+  const dirMap = {'-1_0':'N','1_0':'S','0_1':'E','0_-1':'W'};
+  const d = dirMap[`${dr}_${dc}`];
+  if (!d || player.walls[d]) return;
+  const nr = player.r+dr, nc = player.c+dc;
+  if (nr<0||nr>=ROWS||nc<0||nc>=COLS) return;
+  player = grid[nr][nc];
+  moveCount++;
+  setStat('stat-moves', moveCount);
+  draw();
+  if (player.r === goal.r && player.c === goal.c) {
+    setStat('stat-status', '✓ WON!');
+    document.getElementById('win-banner').classList.add('show');
+    log('You solved the maze! Great job!');
+  }
+}
+
+function cancelSolve() {
+  if (animInterval) clearInterval(animInterval);
+  aiRunning = false;
+  document.getElementById('btn-ai').disabled = false;
+  document.getElementById('btn-ai').textContent = '▶ SOLVE WITH AI';
+}
+
+function solveAI() {
+  if (aiRunning) return;
+  aiPath = []; aiExplored = new Set();
+  setStat('stat-status', 'COMPUTING...');
+  setStat('stat-explored', '—');
+  setStat('stat-path', '—');
+  log('A★ search started...', 'info');
+
+  const result = astar(grid, player, goal, COLS, ROWS);
+  if (!result) { log('No path found!', 'warn'); setStat('stat-status', 'NO PATH'); return; }
+
+  const {path, explored} = result;
+  log(`Explored ${explored.length} nodes → path: ${path.length} steps`);
+  setStat('stat-explored', explored.length);
+  setStat('stat-path', path.length + ' steps');
+  setStat('stat-status', 'ANIMATING...');
+
+  aiRunning = true;
+  document.getElementById('btn-ai').disabled = true;
+  document.getElementById('btn-ai').textContent = '◼ STOP AI';
+
+  const speed = parseInt(document.getElementById('speed-range').value);
+  let ei = 0;
+
+  // Phase 1: show exploration
+  animInterval = setInterval(() => {
+    const batch = Math.max(1, Math.floor(explored.length / 150));
+    for (let i = 0; i < batch && ei < explored.length; i++, ei++) {
+      aiExplored.add(explored[ei].r * COLS + explored[ei].c);
+    }
+    draw();
+    if (ei >= explored.length) {
+      clearInterval(animInterval);
+      // Phase 2: animate path
+      let pi = 0;
+      animInterval = setInterval(() => {
+        if (pi < path.length) {
+          aiPath = path.slice(0, pi + 1);
+          pi++;
+          draw();
+        } else {
+          clearInterval(animInterval);
+          player = goal;
+          aiRunning = false;
+          document.getElementById('btn-ai').disabled = false;
+          document.getElementById('btn-ai').textContent = '▶ SOLVE WITH AI';
+          setStat('stat-status', '✓ SOLVED!');
+          document.getElementById('win-banner').classList.add('show');
+          log('AI solved the maze!', '');
+          draw();
+        }
+      }, Math.max(25, speed / 2));
+    }
+  }, speed);
+}
+
+// ── Event Listeners ─────────────────────────────────────────────
+document.getElementById('btn-gen').onclick = initGame;
+
+document.getElementById('btn-reset').onclick = () => {
+  cancelSolve();
+  player = grid[0][0]; moveCount = 0;
+  aiPath = []; aiExplored = new Set();
+  setStat('stat-moves', '0');
+  setStat('stat-status', 'READY');
+  document.getElementById('win-banner').classList.remove('show');
+  log('Player reset to start', 'info');
+  draw();
+};
+
+document.getElementById('btn-ai').onclick = () => {
+  if (aiRunning) { cancelSolve(); setStat('stat-status', 'STOPPED'); return; }
+  solveAI();
+};
+
+document.getElementById('btn-up').onclick    = () => movePlayer(-1, 0);
+document.getElementById('btn-down').onclick  = () => movePlayer(1, 0);
+document.getElementById('btn-left').onclick  = () => movePlayer(0, -1);
+document.getElementById('btn-right').onclick = () => movePlayer(0, 1);
+
+document.getElementById('size-range').oninput = function() {
+  document.getElementById('size-val').textContent = `${this.value}×${this.value}`;
+};
+document.getElementById('speed-range').oninput = function() {
+  document.getElementById('speed-val').textContent = this.value + 'ms';
+};
+
+document.addEventListener('keydown', e => {
+  const map = {'ArrowUp':[-1,0],'w':[-1,0],'ArrowDown':[1,0],'s':[1,0],'ArrowLeft':[0,-1],'a':[0,-1],'ArrowRight':[0,1],'d':[0,1]};
+  if (map[e.key]) { e.preventDefault(); movePlayer(...map[e.key]); }
+});
+
+window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+
+// Start!
+initGame();
+</script>
+</body>
+</html>
